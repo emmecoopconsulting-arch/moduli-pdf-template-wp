@@ -18,6 +18,20 @@ class PB_RF_Moduli {
     add_meta_box('pb_rf_mod_tpl', 'Template DOCX e impostazioni', [self::class, 'render_metabox'], self::CPT, 'normal', 'high');
   }
 
+  public static function enqueue_assets($hook) {
+    if (!in_array($hook, ['post.php', 'post-new.php'], true)) {
+      return;
+    }
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== self::CPT) {
+      return;
+    }
+
+    $base_url = plugin_dir_url(dirname(__DIR__));
+    wp_enqueue_style('pb-rf-moduli-editor', $base_url . 'assets/moduli-editor.css', [], '1.0.0');
+    wp_enqueue_script('pb-rf-moduli-editor', $base_url . 'assets/moduli-editor.js', ['jquery'], '1.0.0', true);
+  }
+
   public static function render_metabox($post) {
     wp_nonce_field('pb_rf_mod_save', 'pb_rf_mod_nonce');
     $tpl = get_post_meta($post->ID, '_pb_template_docx', true);
@@ -35,8 +49,9 @@ class PB_RF_Moduli {
     <p><input style="width:100%" type="text" name="pb_template_docx" value="<?php echo esc_attr($tpl ?: 'template.docx'); ?>"></p>
 
     <hr>
-    <p><b>Schema campi (JSON)</b> — editabile. Tipi: text, email, date, textarea, select. Per select: "options": [{"value":"1","label":"..."}].</p>
-    <textarea name="pb_schema_json" style="width:100%;min-height:260px;font-family:monospace;"><?php echo esc_textarea($schema); ?></textarea>
+    <p><b>Schema campi</b> — aggiungi e ordina i campi del modulo. Tipi disponibili: text, email, tel, date, textarea, select, select_sede.</p>
+    <div id="pb-schema-editor" class="pb-schema-editor"></div>
+    <textarea name="pb_schema_json" id="pb-schema-json" class="pb-schema-json" style="display:none;"><?php echo esc_textarea($schema); ?></textarea>
 
     <hr>
     <p><b>Email</b> (puoi usare placeholder tipo ${numero_pratica})</p>
@@ -44,7 +59,8 @@ class PB_RF_Moduli {
     <p>Testo<br><textarea name="pb_mail_body" style="width:100%;min-height:120px;"><?php echo esc_textarea($mail_body); ?></textarea></p>
     <p><label><input type="checkbox" name="pb_auto_send" value="1" <?php checked($auto_send, '1'); ?>> Invia automaticamente il PDF dopo “Genera PDF”</label></p>
 
-    <p><b>Placeholder disponibili (base):</b> ${numero_pratica}, ${data_oggi}, ${genitore_nome}, ${genitore_email}, ${genitore_tel}, ${bambino_nome}, ${bambino_nascita}, ${bambino_cf}, ${sede_nome}, ${sede_indirizzo_completo}, ${note}</p>
+    <p><b>Placeholder disponibili (base):</b> ${numero_pratica}, ${data_oggi}, ${genitore_nome}, ${genitore_email}, ${genitore_tel}, ${bambino_nome}, ${bambino_nascita}, ${bambino_cf}, ${sede_nome}, ${sede_indirizzo_completo}, ${note}.</p>
+    <p>Puoi usare anche qualsiasi nome campo dello schema: es. <code>${nome_campo}</code>.</p>
     <?php
   }
 

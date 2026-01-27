@@ -76,22 +76,34 @@ class PB_RF_Richieste {
   }
 
   public static function get_all_fields($request_id) {
-    $keys = [
-      'numero_pratica' => '_pb_ref',
-      'modulo_id' => '_pb_modulo_id',
-      'genitore_nome' => '_pb_gen_nome',
-      'genitore_email' => '_pb_gen_email',
-      'genitore_tel' => '_pb_gen_tel',
-      'bambino_nome' => '_pb_b_nome',
-      'bambino_nascita' => '_pb_b_nascita',
-      'bambino_cf' => '_pb_b_cf',
-      'sede_id' => '_pb_sede_id',
-      'note' => '_pb_note',
-    ];
+    $modulo_id = intval(get_post_meta($request_id, '_pb_modulo_id', true));
+    $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : PB_RF_Form::default_schema();
+    $stored_fields = get_post_meta($request_id, '_pb_fields', true);
+    if (!is_array($stored_fields)) {
+      $stored_fields = [];
+    }
+
     $out = [];
-    foreach ($keys as $label => $meta) {
-      $val = get_post_meta($request_id, $meta, true);
-      if ($label === 'sede_id' && $val) $val = $val . ' - ' . get_the_title(intval($val));
+    $ref = get_post_meta($request_id, '_pb_ref', true);
+    $out['Numero pratica'] = $ref;
+
+    if ($modulo_id) {
+      $out['Modulo'] = get_the_title($modulo_id);
+    }
+
+    foreach ($schema as $field) {
+      $name = sanitize_key($field['name'] ?? '');
+      if (!$name) continue;
+      $label = $field['label'] ?? $name;
+      $val = $stored_fields[$name] ?? '';
+
+      if (($field['type'] ?? '') === 'select') {
+        $val = self::select_label_from_schema($field, $val);
+      }
+      if (($field['type'] ?? '') === 'select_sede' && $val) {
+        $val = $val . ' - ' . get_the_title(intval($val));
+      }
+
       $out[$label] = $val;
     }
     return $out;
@@ -103,7 +115,7 @@ class PB_RF_Richieste {
     $sede_nome = $sede_id ? get_the_title($sede_id) : '';
     $sede_addr = $sede_id ? PB_RF_Sedi::full_address($sede_id) : '';
 
-    return [
+    $vars = [
       'numero_pratica' => $ref,
       'data_oggi' => date_i18n('d/m/Y'),
       'genitore_nome' => get_post_meta($request_id, '_pb_gen_nome', true),
@@ -116,5 +128,39 @@ class PB_RF_Richieste {
       'sede_indirizzo_completo' => $sede_addr,
       'note' => get_post_meta($request_id, '_pb_note', true),
     ];
+
+    $modulo_id = intval(get_post_meta($request_id, '_pb_modulo_id', true));
+    $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : PB_RF_Form::default_schema();
+    $stored_fields = get_post_meta($request_id, '_pb_fields', true);
+    if (!is_array($stored_fields)) {
+      $stored_fields = [];
+    }
+
+    foreach ($schema as $field) {
+      $name = sanitize_key($field['name'] ?? '');
+      if (!$name) continue;
+      $val = $stored_fields[$name] ?? '';
+      if (($field['type'] ?? '') === 'select') {
+        $val = self::select_label_from_schema($field, $val);
+      }
+      if (($field['type'] ?? '') === 'select_sede' && $val) {
+        $val = get_the_title(intval($val));
+      }
+      $vars[$name] = $val;
+    }
+
+    return $vars;
+  }
+
+  private static function select_label_from_schema($field, $value) {
+    if (!is_array($field) || empty($field['options'])) {
+      return $value;
+    }
+    foreach ($field['options'] as $option) {
+      if ((string)($option['value'] ?? '') === (string)$value) {
+        return $option['label'] ?? $value;
+      }
+    }
+    return $value;
   }
 }

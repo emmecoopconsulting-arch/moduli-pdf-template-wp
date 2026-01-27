@@ -25,6 +25,7 @@ class PB_RF_Bootstrap {
 
     add_action('add_meta_boxes', ['PB_RF_Moduli', 'metaboxes']);
     add_action('save_post', ['PB_RF_Moduli', 'save_post'], 10, 2);
+    add_action('admin_enqueue_scripts', ['PB_RF_Moduli', 'enqueue_assets']);
 
     add_action('add_meta_boxes', ['PB_RF_Richieste', 'metaboxes']);
     add_action('save_post', ['PB_RF_Richieste', 'save_post'], 10, 2);

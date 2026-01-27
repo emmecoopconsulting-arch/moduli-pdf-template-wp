@@ -37,7 +37,7 @@ class PB_RF_Form {
     ob_start();
     echo $msg;
     ?>
-    <form method="post" action="<?php echo $action; ?>">
+    <form method="post" action="<?php echo $action; ?>" class="pb-rf-form">
       <input type="hidden" name="action" value="pb_rf_submit">
       <input type="hidden" name="pb_nonce" value="<?php echo esc_attr($nonce); ?>">
       <input type="hidden" name="pb_modulo_id" value="<?php echo esc_attr($modulo_id); ?>">
@@ -47,12 +47,13 @@ class PB_RF_Form {
         foreach ($schema as $f) {
           $group = $f['group'] ?? '';
           if ($group && $group !== $current_group) {
-            if ($current_group !== '') echo '<hr>';
-            echo '<h3>' . esc_html($group) . '</h3>';
+            if ($current_group !== '') echo '</div></fieldset>';
+            echo '<fieldset class="pb-rf-group"><legend>' . esc_html($group) . '</legend><div class="pb-rf-group-fields">';
             $current_group = $group;
           }
           echo self::render_field($f);
         }
+        if ($current_group !== '') echo '</div></fieldset>';
       ?>
 
       <p>
@@ -73,11 +74,13 @@ class PB_RF_Form {
     $label = $f['label'] ?? $name;
     $type = $f['type'] ?? 'text';
     $required = !empty($f['required']);
+    $placeholder = $f['placeholder'] ?? '';
+    $help = $f['help'] ?? '';
     $reqAttr = $required ? 'required' : '';
-    $out = '<p><label>' . esc_html($label) . '<br>';
+    $out = '<p class="pb-rf-field"><label>' . esc_html($label) . '<br>';
 
     if ($type === 'textarea') {
-      $out .= '<textarea name="' . esc_attr($name) . '" rows="4" ' . $reqAttr . '></textarea>';
+      $out .= '<textarea name="' . esc_attr($name) . '" rows="4" ' . $reqAttr . ' placeholder="' . esc_attr($placeholder) . '"></textarea>';
     } elseif ($type === 'select_sede') {
       $out .= '<select name="sede_id" ' . $reqAttr . '>';
       $out .= '<option value="">Seleziona...</option>';
@@ -97,10 +100,13 @@ class PB_RF_Form {
       }
       $out .= '</select>';
     } else {
-      $htmlType = in_array($type, ['text','email','date']) ? $type : 'text';
-      $out .= '<input type="' . esc_attr($htmlType) . '" name="' . esc_attr($name) . '" ' . $reqAttr . '>';
+      $htmlType = in_array($type, ['text','email','date','tel']) ? $type : 'text';
+      $out .= '<input type="' . esc_attr($htmlType) . '" name="' . esc_attr($name) . '" ' . $reqAttr . ' placeholder="' . esc_attr($placeholder) . '">';
     }
 
+    if ($help) {
+      $out .= '<small class="pb-rf-help">' . esc_html($help) . '</small>';
+    }
     $out .= '</label></p>';
     return $out;
   }
@@ -113,14 +119,38 @@ class PB_RF_Form {
 
     $modulo_id = intval($_POST['pb_modulo_id'] ?? 0);
 
-    // Basic required fields (schema-driven would be next iteration)
-    $gen_nome  = sanitize_text_field($_POST['genitore_nome'] ?? '');
-    $gen_email = sanitize_email($_POST['genitore_email'] ?? '');
-    $b_nome    = sanitize_text_field($_POST['bambino_nome'] ?? '');
-    $b_nascita = sanitize_text_field($_POST['bambino_nascita'] ?? '');
-    $sede_id   = intval($_POST['sede_id'] ?? 0);
+    $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : self::default_schema();
+    $values = [];
+    $errors = [];
 
-    if (!$gen_nome || !$gen_email || !$b_nome || !$b_nascita || !$sede_id) {
+    foreach ($schema as $field) {
+      $name = sanitize_key($field['name'] ?? '');
+      if (!$name) continue;
+      $type = $field['type'] ?? 'text';
+      $required = !empty($field['required']);
+      $raw = $_POST[$name] ?? '';
+
+      if ($type === 'select_sede') {
+        $value = intval($raw);
+      } elseif ($type === 'email') {
+        $value = sanitize_email(wp_unslash($raw));
+      } elseif ($type === 'textarea') {
+        $value = sanitize_textarea_field(wp_unslash($raw));
+      } else {
+        $value = sanitize_text_field(wp_unslash($raw));
+      }
+
+      if ($required) {
+        $missing = ($type === 'select_sede') ? ($value === 0) : (trim((string)$value) === '');
+        if ($missing) {
+          $errors[] = $name;
+        }
+      }
+
+      $values[$name] = $value;
+    }
+
+    if (!empty($errors)) {
       wp_die('Campi obbligatori mancanti.');
     }
 
@@ -137,19 +167,30 @@ class PB_RF_Form {
     update_post_meta($post_id, '_pb_ref', $ref);
     update_post_meta($post_id, '_pb_modulo_id', $modulo_id);
 
-    update_post_meta($post_id, '_pb_gen_nome', $gen_nome);
-    update_post_meta($post_id, '_pb_gen_email', $gen_email);
-    update_post_meta($post_id, '_pb_gen_tel', sanitize_text_field($_POST['genitore_tel'] ?? ''));
+    $meta_map = [
+      'genitore_nome' => '_pb_gen_nome',
+      'genitore_email' => '_pb_gen_email',
+      'genitore_tel' => '_pb_gen_tel',
+      'bambino_nome' => '_pb_b_nome',
+      'bambino_nascita' => '_pb_b_nascita',
+      'bambino_cf' => '_pb_b_cf',
+      'sede_id' => '_pb_sede_id',
+      'note' => '_pb_note',
+    ];
 
-    update_post_meta($post_id, '_pb_b_nome', $b_nome);
-    update_post_meta($post_id, '_pb_b_nascita', $b_nascita);
-    update_post_meta($post_id, '_pb_b_cf', sanitize_text_field($_POST['bambino_cf'] ?? ''));
+    foreach ($meta_map as $field_name => $meta_key) {
+      if (array_key_exists($field_name, $values)) {
+        update_post_meta($post_id, $meta_key, $values[$field_name]);
+      }
+    }
 
-    update_post_meta($post_id, '_pb_sede_id', $sede_id);
-    update_post_meta($post_id, '_pb_note', sanitize_textarea_field($_POST['note'] ?? ''));
+    update_post_meta($post_id, '_pb_fields', $values);
 
     // Email conferma (semplice)
-    @wp_mail($gen_email, "Richiesta ricevuta: $ref", "Abbiamo ricevuto la tua richiesta.\nNumero pratica: $ref");
+    $gen_email = $values['genitore_email'] ?? '';
+    if ($gen_email) {
+      @wp_mail($gen_email, "Richiesta ricevuta: $ref", "Abbiamo ricevuto la tua richiesta.\nNumero pratica: $ref");
+    }
 
     $redirect = add_query_arg(['pb_ok' => '1', 'ref' => $ref], wp_get_referer() ?: home_url('/'));
     wp_safe_redirect($redirect);
