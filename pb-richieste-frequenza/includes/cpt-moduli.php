@@ -27,7 +27,7 @@ class PB_RF_Moduli {
       return;
     }
 
-    $base_url = plugin_dir_url(dirname(__DIR__));
+    $base_url = plugin_dir_url(dirname(__DIR__) . '/pb-richieste-frequenza.php');
     wp_enqueue_style('pb-rf-moduli-editor', $base_url . 'assets/moduli-editor.css', [], '1.0.0');
     wp_enqueue_script('pb-rf-moduli-editor', $base_url . 'assets/moduli-editor.js', ['jquery'], '1.0.0', true);
   }
