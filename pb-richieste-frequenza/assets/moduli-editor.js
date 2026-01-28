@@ -52,6 +52,7 @@
     $header.append($title, $actions);
 
     const $grid = $('<div/>', { class: 'pb-schema-field-grid' });
+    const $placeholder = $('<div/>', { class: 'pb-schema-helper pb-schema-placeholder' });
 
     $grid.append(
       $('<label/>').append('Nome campo', $('<input/>', { type: 'text', class: 'pb-field-name', value: field.name || '' })),
@@ -86,8 +87,9 @@
       $('<button/>', { type: 'button', class: 'button pb-add-option', text: 'Aggiungi opzione' })
     );
 
-    $field.append($header, $grid, $options);
+    $field.append($header, $grid, $placeholder, $options);
     toggleOptions($field, field.type);
+    updatePlaceholderHint($field);
     return $field;
   }
 
@@ -142,6 +144,12 @@
       schema.push(fieldData);
     });
     return schema;
+  }
+
+  function updatePlaceholderHint($field) {
+    const nameValue = sanitizeName($field.find('.pb-field-name').val());
+    const placeholder = nameValue ? `Placeholder: \${${nameValue}}` : 'Imposta il nome campo per ottenere il placeholder.';
+    $field.find('.pb-schema-placeholder').text(placeholder);
   }
 
   $(function () {
@@ -223,7 +231,15 @@
       syncTextarea();
     });
 
-    $fieldsWrapper.on('input change', 'input, select, textarea', () => {
+    $fieldsWrapper.on('input change', 'input, select, textarea', function () {
+      const $field = $(this).closest('.pb-schema-field');
+      if ($field.length && $(this).hasClass('pb-field-name')) {
+        const sanitized = sanitizeName($(this).val());
+        $(this).val(sanitized);
+      }
+      if ($field.length) {
+        updatePlaceholderHint($field);
+      }
       syncTextarea();
     });
 

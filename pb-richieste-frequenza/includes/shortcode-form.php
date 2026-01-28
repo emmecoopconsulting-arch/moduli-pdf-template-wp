@@ -70,7 +70,8 @@ class PB_RF_Form {
   }
 
   private static function render_field($f) {
-    $name = sanitize_key($f['name'] ?? '');
+    $raw_name = $f['name'] ?? '';
+    $name = sanitize_key($raw_name);
     $label = $f['label'] ?? $name;
     $type = $f['type'] ?? 'text';
     $required = !empty($f['required']);
@@ -82,7 +83,7 @@ class PB_RF_Form {
     if ($type === 'textarea') {
       $out .= '<textarea name="' . esc_attr($name) . '" rows="4" ' . $reqAttr . ' placeholder="' . esc_attr($placeholder) . '"></textarea>';
     } elseif ($type === 'select_sede') {
-      $out .= '<select name="sede_id" ' . $reqAttr . '>';
+      $out .= '<select name="' . esc_attr($name) . '" ' . $reqAttr . '>';
       $out .= '<option value="">Seleziona...</option>';
       $sedi = get_posts(['post_type' => PB_RF_Sedi::CPT, 'post_status'=>'publish', 'numberposts'=>-1, 'orderby'=>'title', 'order'=>'ASC']);
       foreach ($sedi as $s) {
@@ -124,7 +125,8 @@ class PB_RF_Form {
     $errors = [];
 
     foreach ($schema as $field) {
-      $name = sanitize_key($field['name'] ?? '');
+      $raw_name = $field['name'] ?? '';
+      $name = sanitize_key($raw_name);
       if (!$name) continue;
       $type = $field['type'] ?? 'text';
       $required = !empty($field['required']);
@@ -148,6 +150,9 @@ class PB_RF_Form {
       }
 
       $values[$name] = $value;
+      if ($raw_name && $raw_name !== $name) {
+        $values[$raw_name] = $value;
+      }
     }
 
     if (!empty($errors)) {

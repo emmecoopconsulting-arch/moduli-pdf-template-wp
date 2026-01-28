@@ -92,10 +92,11 @@ class PB_RF_Richieste {
     }
 
     foreach ($schema as $field) {
-      $name = sanitize_key($field['name'] ?? '');
+      $raw_name = $field['name'] ?? '';
+      $name = sanitize_key($raw_name);
       if (!$name) continue;
       $label = $field['label'] ?? $name;
-      $val = $stored_fields[$name] ?? '';
+      $val = $stored_fields[$name] ?? ($raw_name ? ($stored_fields[$raw_name] ?? '') : '');
 
       if (($field['type'] ?? '') === 'select') {
         $val = self::select_label_from_schema($field, $val);
@@ -137,9 +138,10 @@ class PB_RF_Richieste {
     }
 
     foreach ($schema as $field) {
-      $name = sanitize_key($field['name'] ?? '');
+      $raw_name = $field['name'] ?? '';
+      $name = sanitize_key($raw_name);
       if (!$name) continue;
-      $val = $stored_fields[$name] ?? '';
+      $val = $stored_fields[$name] ?? ($raw_name ? ($stored_fields[$raw_name] ?? '') : '');
       if (($field['type'] ?? '') === 'select') {
         $val = self::select_label_from_schema($field, $val);
       }
@@ -147,6 +149,9 @@ class PB_RF_Richieste {
         $val = get_the_title(intval($val));
       }
       $vars[$name] = $val;
+      if ($raw_name && $raw_name !== $name) {
+        $vars[$raw_name] = $val;
+      }
     }
 
     return $vars;
