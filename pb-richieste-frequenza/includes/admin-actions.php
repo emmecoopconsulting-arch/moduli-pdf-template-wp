@@ -22,21 +22,22 @@ class PB_RF_Admin_Actions {
 
       if ($tpl_html) {
         $template_path = PB_RF_HTML_PATH . '/' . $tpl_html;
-        $html_out = PB_RF_TMP_PATH . '/' . $ref . '.html';
-        $pdf_out = PB_RF_PDF_PATH . '/' . $ref . '.pdf';
+        $html_out = PB_RF_HTML_PATH . '/' . $ref . '.html';
         PB_RF_Html::render_html($template_path, $html_out, $vars);
-        $pdf = PB_RF_Html::convert_to_pdf($html_out, $pdf_out);
+        update_post_meta($post_id, '_pb_html_path', $html_out);
+        update_post_meta($post_id, '_pb_pdf_path', '');
+        $pdf = '';
       } else {
         $template_path = PB_RF_DOCX_PATH . '/' . $tpl_name;
         $docx_out = PB_RF_DOCX_PATH . '/' . $ref . '.docx';
         PB_RF_Docx::render_docx($template_path, $docx_out, $vars);
         $pdf = PB_RF_Docx::convert_to_pdf($docx_out, PB_RF_PDF_PATH);
+        update_post_meta($post_id, '_pb_pdf_path', $pdf);
+        update_post_meta($post_id, '_pb_html_path', '');
       }
 
-      update_post_meta($post_id, '_pb_pdf_path', $pdf);
-
       // Auto-send if enabled in module
-      if ($modulo_id && get_post_meta($modulo_id, '_pb_auto_send', true) === '1') {
+      if ($pdf && $modulo_id && get_post_meta($modulo_id, '_pb_auto_send', true) === '1') {
         PB_RF_Mailer::send_pdf_to_parent($post_id, $pdf);
       }
 
@@ -60,6 +61,22 @@ class PB_RF_Admin_Actions {
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Content-Length: ' . filesize($pdf));
     readfile($pdf);
+    exit;
+  }
+
+  public static function download_html() {
+    if (!current_user_can('manage_options')) wp_die('Non autorizzato.');
+    check_admin_referer('pb_rf_download_html');
+
+    $post_id = intval($_GET['post_id'] ?? 0);
+    $html = $post_id ? get_post_meta($post_id, '_pb_html_path', true) : '';
+    if (!$html || !file_exists($html) || !PB_RF_Storage::path_is_inside_base($html)) wp_die('HTML non disponibile.');
+
+    $filename = basename($html);
+    header('Content-Type: text/html; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . filesize($html));
+    readfile($html);
     exit;
   }
 

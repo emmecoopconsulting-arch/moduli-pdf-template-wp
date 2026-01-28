@@ -31,11 +31,12 @@ class PB_RF_Richieste {
   public static function render_actions_metabox($post) {
     $ref = get_post_meta($post->ID, '_pb_ref', true);
     $pdf = get_post_meta($post->ID, '_pb_pdf_path', true);
+    $html = get_post_meta($post->ID, '_pb_html_path', true);
     $sent_at = get_post_meta($post->ID, '_pb_pdf_sent_at', true);
 
     $gen_url = wp_nonce_url(admin_url('admin-post.php?action=pb_rf_generate_pdf&post_id=' . intval($post->ID)), 'pb_rf_generate_pdf');
     echo '<p><b>Pratica:</b> ' . esc_html($ref) . '</p>';
-    echo '<p><a class="button button-primary" href="' . esc_url($gen_url) . '">Genera PDF</a></p>';
+    echo '<p><a class="button button-primary" href="' . esc_url($gen_url) . '">Genera documento</a></p>';
 
     if ($pdf && file_exists($pdf) && PB_RF_Storage::path_is_inside_base($pdf)) {
       $dl_url = wp_nonce_url(admin_url('admin-post.php?action=pb_rf_download_pdf&post_id=' . intval($post->ID)), 'pb_rf_download_pdf');
@@ -46,8 +47,12 @@ class PB_RF_Richieste {
 
       if ($sent_at) echo '<p style="color:#2271b1">Inviato: ' . esc_html($sent_at) . '</p>';
       else echo '<p style="color:#777">Non ancora inviato</p>';
+    } elseif ($html && file_exists($html) && PB_RF_Storage::path_is_inside_base($html)) {
+      $dl_html = wp_nonce_url(admin_url('admin-post.php?action=pb_rf_download_html&post_id=' . intval($post->ID)), 'pb_rf_download_html');
+      echo '<p><a class="button" href="' . esc_url($dl_html) . '">Scarica HTML</a></p>';
+      echo '<p style="color:#777">PDF non generato (template HTML attivo)</p>';
     } else {
-      echo '<p style="color:#777">Nessun PDF generato</p>';
+      echo '<p style="color:#777">Nessun documento generato</p>';
     }
   }
 

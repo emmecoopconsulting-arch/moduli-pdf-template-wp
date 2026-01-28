@@ -39,6 +39,7 @@ class PB_RF_Bootstrap {
     add_action('admin_post_pb_rf_generate_pdf', ['PB_RF_Admin_Actions', 'generate_pdf']);
     add_action('admin_post_pb_rf_download_pdf', ['PB_RF_Admin_Actions', 'download_pdf']);
     add_action('admin_post_pb_rf_send_pdf', ['PB_RF_Admin_Actions', 'send_pdf']);
+    add_action('admin_post_pb_rf_download_html', ['PB_RF_Admin_Actions', 'download_html']);
 
     add_action('admin_menu', ['PB_RF_Admin_Pages', 'register_menu']);
     add_action('admin_post_pb_rf_upload_template', ['PB_RF_Admin_Pages', 'handle_template_upload']);

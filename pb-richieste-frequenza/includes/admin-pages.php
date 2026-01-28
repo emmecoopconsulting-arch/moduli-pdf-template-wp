@@ -280,6 +280,7 @@ class PB_RF_Admin_Pages {
     ?>
     <div class="wrap">
       <h1>Template HTML</h1>
+      <p>Questa modalità genera un documento HTML senza conversione PDF (nessun componente aggiuntivo richiesto).</p>
 
       <?php if ($ok) : ?>
         <div class="notice notice-success"><p>Template salvato correttamente.</p></div>
