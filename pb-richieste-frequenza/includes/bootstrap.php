@@ -3,6 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 require_once __DIR__ . '/util-storage.php';
 require_once __DIR__ . '/util-docx.php';
+require_once __DIR__ . '/util-html.php';
 require_once __DIR__ . '/util-mailer.php';
 
 require_once __DIR__ . '/cpt-sedi.php';
@@ -41,5 +42,6 @@ class PB_RF_Bootstrap {
 
     add_action('admin_menu', ['PB_RF_Admin_Pages', 'register_menu']);
     add_action('admin_post_pb_rf_upload_template', ['PB_RF_Admin_Pages', 'handle_template_upload']);
+    add_action('admin_post_pb_rf_save_html_template', ['PB_RF_Admin_Pages', 'handle_html_template_save']);
   }
 }

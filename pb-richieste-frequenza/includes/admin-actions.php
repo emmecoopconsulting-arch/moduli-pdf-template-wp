@@ -14,15 +14,24 @@ class PB_RF_Admin_Actions {
       PB_RF_Storage::ensure_storage();
 
       $modulo_id = intval(get_post_meta($post_id, '_pb_modulo_id', true));
+      $tpl_html = $modulo_id ? PB_RF_Moduli::html_template_filename($modulo_id) : '';
       $tpl_name = $modulo_id ? PB_RF_Moduli::template_filename($modulo_id) : 'template.docx';
-      $template_path = PB_RF_DOCX_PATH . '/' . $tpl_name;
 
       $ref = get_post_meta($post_id, '_pb_ref', true);
-      $docx_out = PB_RF_DOCX_PATH . '/' . $ref . '.docx';
       $vars = PB_RF_Richieste::build_template_vars($post_id);
 
-      PB_RF_Docx::render_docx($template_path, $docx_out, $vars);
-      $pdf = PB_RF_Docx::convert_to_pdf($docx_out, PB_RF_PDF_PATH);
+      if ($tpl_html) {
+        $template_path = PB_RF_HTML_PATH . '/' . $tpl_html;
+        $html_out = PB_RF_TMP_PATH . '/' . $ref . '.html';
+        $pdf_out = PB_RF_PDF_PATH . '/' . $ref . '.pdf';
+        PB_RF_Html::render_html($template_path, $html_out, $vars);
+        $pdf = PB_RF_Html::convert_to_pdf($html_out, $pdf_out);
+      } else {
+        $template_path = PB_RF_DOCX_PATH . '/' . $tpl_name;
+        $docx_out = PB_RF_DOCX_PATH . '/' . $ref . '.docx';
+        PB_RF_Docx::render_docx($template_path, $docx_out, $vars);
+        $pdf = PB_RF_Docx::convert_to_pdf($docx_out, PB_RF_PDF_PATH);
+      }
 
       update_post_meta($post_id, '_pb_pdf_path', $pdf);
 

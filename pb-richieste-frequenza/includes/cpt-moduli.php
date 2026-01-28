@@ -35,6 +35,7 @@ class PB_RF_Moduli {
   public static function render_metabox($post) {
     wp_nonce_field('pb_rf_mod_save', 'pb_rf_mod_nonce');
     $tpl = get_post_meta($post->ID, '_pb_template_docx', true);
+    $tpl_html = get_post_meta($post->ID, '_pb_template_html', true);
     $schema = get_post_meta($post->ID, '_pb_schema_json', true);
     $mail_sub = get_post_meta($post->ID, '_pb_mail_subject', true);
     $mail_body = get_post_meta($post->ID, '_pb_mail_body', true);
@@ -47,6 +48,8 @@ class PB_RF_Moduli {
     ?>
     <p><b>Template DOCX:</b> carica un file DOCX in <code><?php echo esc_html(PB_RF_DOCX_PATH); ?></code> e inserisci qui il nome file (es. <code>template.docx</code>) oppure un nome diverso per questo modulo.</p>
     <p><input style="width:100%" type="text" name="pb_template_docx" value="<?php echo esc_attr($tpl ?: 'template.docx'); ?>"></p>
+    <p><b>Template HTML:</b> carica o crea un file in <code><?php echo esc_html(PB_RF_HTML_PATH); ?></code> e inserisci qui il nome file (es. <code>template.html</code>). Se presente, verrà usato al posto del DOCX.</p>
+    <p><input style="width:100%" type="text" name="pb_template_html" value="<?php echo esc_attr($tpl_html ?: ''); ?>"></p>
 
     <hr>
     <p><b>Schema campi</b> — aggiungi e ordina i campi del modulo. Tipi disponibili: text, email, tel, date, textarea, select, select_sede.</p>
@@ -70,6 +73,7 @@ class PB_RF_Moduli {
     if (!isset($_POST['pb_rf_mod_nonce']) || !wp_verify_nonce($_POST['pb_rf_mod_nonce'], 'pb_rf_mod_save')) return;
 
     update_post_meta($post_id, '_pb_template_docx', sanitize_text_field($_POST['pb_template_docx'] ?? 'template.docx'));
+    update_post_meta($post_id, '_pb_template_html', sanitize_text_field($_POST['pb_template_html'] ?? ''));
 
     $schema = wp_unslash($_POST['pb_schema_json'] ?? '');
     // Validate JSON, fallback to default
@@ -94,5 +98,10 @@ class PB_RF_Moduli {
   public static function template_filename($modulo_id) {
     $tpl = get_post_meta($modulo_id, '_pb_template_docx', true);
     return $tpl ? $tpl : 'template.docx';
+  }
+
+  public static function html_template_filename($modulo_id) {
+    $tpl = get_post_meta($modulo_id, '_pb_template_html', true);
+    return $tpl ? $tpl : '';
   }
 }
