@@ -112,30 +112,63 @@ class PB_RF_Richieste {
 
   public static function build_template_vars($request_id) {
     $ref = get_post_meta($request_id, '_pb_ref', true);
-    $sede_id = intval(get_post_meta($request_id, '_pb_sede_id', true));
-    $sede_nome = $sede_id ? get_the_title($sede_id) : '';
-    $sede_addr = $sede_id ? PB_RF_Sedi::full_address($sede_id) : '';
-
-    $vars = [
-      'numero_pratica' => $ref,
-      'data_oggi' => date_i18n('d/m/Y'),
-      'genitore_nome' => get_post_meta($request_id, '_pb_gen_nome', true),
-      'genitore_email' => get_post_meta($request_id, '_pb_gen_email', true),
-      'genitore_tel' => get_post_meta($request_id, '_pb_gen_tel', true),
-      'bambino_nome' => get_post_meta($request_id, '_pb_b_nome', true),
-      'bambino_nascita' => get_post_meta($request_id, '_pb_b_nascita', true),
-      'bambino_cf' => get_post_meta($request_id, '_pb_b_cf', true),
-      'sede_nome' => $sede_nome,
-      'sede_indirizzo_completo' => $sede_addr,
-      'note' => get_post_meta($request_id, '_pb_note', true),
-    ];
-
-    $modulo_id = intval(get_post_meta($request_id, '_pb_modulo_id', true));
-    $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : PB_RF_Form::default_schema();
     $stored_fields = get_post_meta($request_id, '_pb_fields', true);
     if (!is_array($stored_fields)) {
       $stored_fields = [];
     }
+
+    $sede_id = intval(get_post_meta($request_id, '_pb_sede_id', true));
+    if (!$sede_id) {
+      $sede_id = intval(self::stored_field_value($stored_fields, 'sede_id'));
+    }
+    $sede_nome = $sede_id ? get_the_title($sede_id) : '';
+    $sede_addr = $sede_id ? PB_RF_Sedi::full_address($sede_id) : '';
+
+    $gen_nome = get_post_meta($request_id, '_pb_gen_nome', true);
+    if ($gen_nome === '') {
+      $gen_nome = self::stored_field_value($stored_fields, 'genitore_nome');
+    }
+    $gen_email = get_post_meta($request_id, '_pb_gen_email', true);
+    if ($gen_email === '') {
+      $gen_email = self::stored_field_value($stored_fields, 'genitore_email');
+    }
+    $gen_tel = get_post_meta($request_id, '_pb_gen_tel', true);
+    if ($gen_tel === '') {
+      $gen_tel = self::stored_field_value($stored_fields, 'genitore_tel');
+    }
+    $b_nome = get_post_meta($request_id, '_pb_b_nome', true);
+    if ($b_nome === '') {
+      $b_nome = self::stored_field_value($stored_fields, 'bambino_nome');
+    }
+    $b_nascita = get_post_meta($request_id, '_pb_b_nascita', true);
+    if ($b_nascita === '') {
+      $b_nascita = self::stored_field_value($stored_fields, 'bambino_nascita');
+    }
+    $b_cf = get_post_meta($request_id, '_pb_b_cf', true);
+    if ($b_cf === '') {
+      $b_cf = self::stored_field_value($stored_fields, 'bambino_cf');
+    }
+    $note = get_post_meta($request_id, '_pb_note', true);
+    if ($note === '') {
+      $note = self::stored_field_value($stored_fields, 'note');
+    }
+
+    $vars = [
+      'numero_pratica' => $ref,
+      'data_oggi' => date_i18n('d/m/Y'),
+      'genitore_nome' => $gen_nome,
+      'genitore_email' => $gen_email,
+      'genitore_tel' => $gen_tel,
+      'bambino_nome' => $b_nome,
+      'bambino_nascita' => $b_nascita,
+      'bambino_cf' => $b_cf,
+      'sede_nome' => $sede_nome,
+      'sede_indirizzo_completo' => $sede_addr,
+      'note' => $note,
+    ];
+
+    $modulo_id = intval(get_post_meta($request_id, '_pb_modulo_id', true));
+    $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : PB_RF_Form::default_schema();
 
     foreach ($schema as $field) {
       $raw_name = $field['name'] ?? '';
@@ -155,6 +188,20 @@ class PB_RF_Richieste {
     }
 
     return $vars;
+  }
+
+  private static function stored_field_value($stored_fields, $key) {
+    if (!is_array($stored_fields)) {
+      return '';
+    }
+    $sanitized = sanitize_key($key);
+    if (array_key_exists($key, $stored_fields)) {
+      return $stored_fields[$key];
+    }
+    if ($sanitized && array_key_exists($sanitized, $stored_fields)) {
+      return $stored_fields[$sanitized];
+    }
+    return '';
   }
 
   private static function select_label_from_schema($field, $value) {
