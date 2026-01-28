@@ -10,6 +10,7 @@ require_once __DIR__ . '/cpt-moduli.php';
 require_once __DIR__ . '/cpt-richieste.php';
 require_once __DIR__ . '/shortcode-form.php';
 require_once __DIR__ . '/admin-actions.php';
+require_once __DIR__ . '/admin-pages.php';
 
 class PB_RF_Bootstrap {
   public static function init() {
@@ -37,5 +38,8 @@ class PB_RF_Bootstrap {
     add_action('admin_post_pb_rf_generate_pdf', ['PB_RF_Admin_Actions', 'generate_pdf']);
     add_action('admin_post_pb_rf_download_pdf', ['PB_RF_Admin_Actions', 'download_pdf']);
     add_action('admin_post_pb_rf_send_pdf', ['PB_RF_Admin_Actions', 'send_pdf']);
+
+    add_action('admin_menu', ['PB_RF_Admin_Pages', 'register_menu']);
+    add_action('admin_post_pb_rf_upload_template', ['PB_RF_Admin_Pages', 'handle_template_upload']);
   }
 }
