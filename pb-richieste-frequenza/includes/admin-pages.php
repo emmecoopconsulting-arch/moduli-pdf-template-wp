@@ -280,7 +280,7 @@ class PB_RF_Admin_Pages {
     ?>
     <div class="wrap">
       <h1>Template HTML</h1>
-      <p>Questa modalità usa HTML per generare PDF con <code>wkhtmltopdf</code> (se disponibile) e permette header/footer personalizzati.</p>
+      <p>Questa modalità usa HTML per generare PDF con <code>Chromium</code> in modalità headless (se disponibile) e permette header/footer personalizzati.</p>
 
       <?php if ($ok) : ?>
         <div class="notice notice-success"><p>Template salvato correttamente.</p></div>
