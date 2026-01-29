@@ -15,6 +15,8 @@ class PB_RF_Admin_Actions {
 
       $modulo_id = intval(get_post_meta($post_id, '_pb_modulo_id', true));
       $tpl_html = $modulo_id ? PB_RF_Moduli::html_template_filename($modulo_id) : '';
+      $tpl_header = $modulo_id ? PB_RF_Moduli::html_header_filename($modulo_id) : '';
+      $tpl_footer = $modulo_id ? PB_RF_Moduli::html_footer_filename($modulo_id) : '';
       $tpl_name = $modulo_id ? PB_RF_Moduli::template_filename($modulo_id) : 'template.docx';
 
       $ref = get_post_meta($post_id, '_pb_ref', true);
@@ -23,10 +25,25 @@ class PB_RF_Admin_Actions {
       if ($tpl_html) {
         $template_path = PB_RF_HTML_PATH . '/' . $tpl_html;
         $html_out = PB_RF_HTML_PATH . '/' . $ref . '.html';
+        $header_out = $tpl_header ? PB_RF_TMP_PATH . '/' . $ref . '-header.html' : '';
+        $footer_out = $tpl_footer ? PB_RF_TMP_PATH . '/' . $ref . '-footer.html' : '';
+
         PB_RF_Html::render_html($template_path, $html_out, $vars);
+        if ($tpl_header) {
+          PB_RF_Html::render_html(PB_RF_HTML_PATH . '/' . $tpl_header, $header_out, $vars);
+        }
+        if ($tpl_footer) {
+          PB_RF_Html::render_html(PB_RF_HTML_PATH . '/' . $tpl_footer, $footer_out, $vars);
+        }
+
+        $pdf_out = PB_RF_PDF_PATH . '/' . $ref . '.pdf';
+        $pdf = PB_RF_Html::convert_to_pdf($html_out, $pdf_out, [
+          'header' => $header_out,
+          'footer' => $footer_out,
+        ]);
+
         update_post_meta($post_id, '_pb_html_path', $html_out);
-        update_post_meta($post_id, '_pb_pdf_path', '');
-        $pdf = '';
+        update_post_meta($post_id, '_pb_pdf_path', $pdf);
       } else {
         $template_path = PB_RF_DOCX_PATH . '/' . $tpl_name;
         $docx_out = PB_RF_DOCX_PATH . '/' . $ref . '.docx';

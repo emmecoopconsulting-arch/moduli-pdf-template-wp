@@ -280,7 +280,7 @@ class PB_RF_Admin_Pages {
     ?>
     <div class="wrap">
       <h1>Template HTML</h1>
-      <p>Questa modalità genera un documento HTML senza conversione PDF (nessun componente aggiuntivo richiesto).</p>
+      <p>Questa modalità usa HTML per generare PDF con <code>wkhtmltopdf</code> (se disponibile) e permette header/footer personalizzati.</p>
 
       <?php if ($ok) : ?>
         <div class="notice notice-success"><p>Template salvato correttamente.</p></div>
@@ -316,6 +316,25 @@ class PB_RF_Admin_Pages {
         <textarea name="pb_rf_html_content" rows="20" style="width:100%;font-family:monospace;"><?php echo esc_textarea($content); ?></textarea>
         <p>
           <button class="button button-primary">Salva template</button>
+        </p>
+      </form>
+
+      <h2>Header / Footer PDF</h2>
+      <p>Crea file HTML separati per header e footer (es. <code>header.html</code>, <code>footer.html</code>) e impostali nel modulo.</p>
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <?php wp_nonce_field('pb_rf_save_html_template'); ?>
+        <input type="hidden" name="action" value="pb_rf_save_html_template">
+        <p>
+          <label>Nome file header/footer<br>
+            <input type="text" name="pb_rf_html_filename" value="" placeholder="header.html oppure footer.html" style="width:320px;">
+          </label>
+        </p>
+        <p>
+          <label>Contenuto HTML (placeholder: <code>${nome_campo}</code>)</label>
+        </p>
+        <textarea name="pb_rf_html_content" rows="8" style="width:100%;font-family:monospace;"></textarea>
+        <p>
+          <button class="button">Salva header/footer</button>
         </p>
       </form>
 
