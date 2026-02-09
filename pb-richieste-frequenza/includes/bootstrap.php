@@ -3,6 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 require_once __DIR__ . '/util-storage.php';
 require_once __DIR__ . '/util-docx.php';
+require_once __DIR__ . '/util-html.php';
 require_once __DIR__ . '/util-mailer.php';
 
 require_once __DIR__ . '/cpt-sedi.php';
@@ -10,6 +11,7 @@ require_once __DIR__ . '/cpt-moduli.php';
 require_once __DIR__ . '/cpt-richieste.php';
 require_once __DIR__ . '/shortcode-form.php';
 require_once __DIR__ . '/admin-actions.php';
+require_once __DIR__ . '/admin-pages.php';
 
 class PB_RF_Bootstrap {
   public static function init() {
@@ -25,6 +27,7 @@ class PB_RF_Bootstrap {
 
     add_action('add_meta_boxes', ['PB_RF_Moduli', 'metaboxes']);
     add_action('save_post', ['PB_RF_Moduli', 'save_post'], 10, 2);
+    add_action('admin_enqueue_scripts', ['PB_RF_Moduli', 'enqueue_assets']);
 
     add_action('add_meta_boxes', ['PB_RF_Richieste', 'metaboxes']);
     add_action('save_post', ['PB_RF_Richieste', 'save_post'], 10, 2);
@@ -36,5 +39,10 @@ class PB_RF_Bootstrap {
     add_action('admin_post_pb_rf_generate_pdf', ['PB_RF_Admin_Actions', 'generate_pdf']);
     add_action('admin_post_pb_rf_download_pdf', ['PB_RF_Admin_Actions', 'download_pdf']);
     add_action('admin_post_pb_rf_send_pdf', ['PB_RF_Admin_Actions', 'send_pdf']);
+    add_action('admin_post_pb_rf_download_html', ['PB_RF_Admin_Actions', 'download_html']);
+
+    add_action('admin_menu', ['PB_RF_Admin_Pages', 'register_menu']);
+    add_action('admin_post_pb_rf_upload_template', ['PB_RF_Admin_Pages', 'handle_template_upload']);
+    add_action('admin_post_pb_rf_save_html_template', ['PB_RF_Admin_Pages', 'handle_html_template_save']);
   }
 }
