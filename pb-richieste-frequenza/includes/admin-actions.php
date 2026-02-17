@@ -8,7 +8,7 @@ class PB_RF_Admin_Actions {
     check_admin_referer('pb_rf_generate_pdf');
 
     $post_id = intval($_GET['post_id'] ?? 0);
-    if (!$post_id) wp_die('post_id mancante');
+    self::assert_request_post($post_id);
 
     try {
       PB_RF_Storage::ensure_storage();
@@ -16,8 +16,14 @@ class PB_RF_Admin_Actions {
       $modulo_id = intval(get_post_meta($post_id, '_pb_modulo_id', true));
       $tpl_name = $modulo_id ? PB_RF_Moduli::template_filename($modulo_id) : 'template.docx';
       $template_path = PB_RF_DOCX_PATH . '/' . $tpl_name;
+      if (!file_exists($template_path) || !is_readable($template_path)) {
+        throw new Exception('Template DOCX non trovato o non leggibile: ' . $tpl_name);
+      }
 
       $ref = get_post_meta($post_id, '_pb_ref', true);
+      if (!$ref) {
+        throw new Exception('Numero pratica mancante nella richiesta.');
+      }
       $docx_out = PB_RF_DOCX_PATH . '/' . $ref . '.docx';
       $vars = PB_RF_Richieste::build_template_vars($post_id);
 
@@ -43,6 +49,7 @@ class PB_RF_Admin_Actions {
     check_admin_referer('pb_rf_download_pdf');
 
     $post_id = intval($_GET['post_id'] ?? 0);
+    self::assert_request_post($post_id);
     $pdf = $post_id ? get_post_meta($post_id, '_pb_pdf_path', true) : '';
     if (!$pdf || !file_exists($pdf) || !PB_RF_Storage::path_is_inside_base($pdf)) wp_die('PDF non disponibile.');
 
@@ -59,6 +66,7 @@ class PB_RF_Admin_Actions {
     check_admin_referer('pb_rf_send_pdf');
 
     $post_id = intval($_GET['post_id'] ?? 0);
+    self::assert_request_post($post_id);
     $pdf = $post_id ? get_post_meta($post_id, '_pb_pdf_path', true) : '';
     if (!$pdf || !file_exists($pdf) || !PB_RF_Storage::path_is_inside_base($pdf)) wp_die('PDF non disponibile.');
 
@@ -68,6 +76,13 @@ class PB_RF_Admin_Actions {
       exit;
     } catch (Exception $e) {
       wp_die(nl2br(esc_html($e->getMessage())));
+    }
+  }
+
+  private static function assert_request_post($post_id) {
+    if (!$post_id) wp_die('post_id mancante');
+    if (get_post_type($post_id) !== PB_RF_Richieste::CPT) {
+      wp_die('Richiesta non valida.');
     }
   }
 }

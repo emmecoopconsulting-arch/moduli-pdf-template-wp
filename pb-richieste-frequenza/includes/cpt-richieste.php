@@ -3,6 +3,9 @@ if (!defined('ABSPATH')) exit;
 
 class PB_RF_Richieste {
   const CPT = 'pb_richiesta_freq';
+  const QUERY_VAR_STATUS = 'pb_rf_stato';
+  const STATUS_PENDING = 'da_evadere';
+  const STATUS_DONE = 'evase';
 
   public static function register() {
     register_post_type(self::CPT, [
@@ -53,6 +56,85 @@ class PB_RF_Richieste {
 
   public static function save_post($post_id, $post) {
     // no manual edits for now
+  }
+
+  public static function list_table_columns($columns) {
+    $new_columns = [];
+    foreach ($columns as $key => $label) {
+      $new_columns[$key] = $label;
+      if ($key === 'title') {
+        $new_columns['pb_rf_stato'] = 'Stato';
+      }
+    }
+    return $new_columns;
+  }
+
+  public static function render_list_table_column($column, $post_id) {
+    if ($column !== 'pb_rf_stato') return;
+
+    if (self::has_generated_pdf($post_id)) {
+      echo '<span style="color:#137333;font-weight:600;">Evasa</span>';
+      return;
+    }
+    echo '<span style="color:#b32d2e;font-weight:600;">Da evadere</span>';
+  }
+
+  public static function list_table_views($views) {
+    global $typenow;
+    if ($typenow !== self::CPT) return $views;
+
+    $current = sanitize_key($_GET[self::QUERY_VAR_STATUS] ?? '');
+    $pending_count = self::count_by_status(self::STATUS_PENDING);
+    $done_count = self::count_by_status(self::STATUS_DONE);
+
+    $pending_url = add_query_arg([self::QUERY_VAR_STATUS => self::STATUS_PENDING], admin_url('edit.php?post_type=' . self::CPT));
+    $done_url = add_query_arg([self::QUERY_VAR_STATUS => self::STATUS_DONE], admin_url('edit.php?post_type=' . self::CPT));
+
+    $views[self::STATUS_PENDING] = sprintf(
+      '<a href="%s"%s>Da evadere <span class="count">(%d)</span></a>',
+      esc_url($pending_url),
+      $current === self::STATUS_PENDING ? ' class="current"' : '',
+      $pending_count
+    );
+    $views[self::STATUS_DONE] = sprintf(
+      '<a href="%s"%s>Evase <span class="count">(%d)</span></a>',
+      esc_url($done_url),
+      $current === self::STATUS_DONE ? ' class="current"' : '',
+      $done_count
+    );
+
+    return $views;
+  }
+
+  public static function filter_requests_query($query) {
+    if (!is_admin() || !$query->is_main_query()) return;
+
+    $post_type = $query->get('post_type');
+    if ($post_type !== self::CPT) return;
+
+    $status = sanitize_key($_GET[self::QUERY_VAR_STATUS] ?? '');
+    if ($status === self::STATUS_DONE) {
+      $query->set('meta_query', [[
+        'key' => '_pb_pdf_path',
+        'value' => '',
+        'compare' => '!=',
+      ]]);
+      return;
+    }
+    if ($status === self::STATUS_PENDING) {
+      $query->set('meta_query', [
+        'relation' => 'OR',
+        [
+          'key' => '_pb_pdf_path',
+          'compare' => 'NOT EXISTS',
+        ],
+        [
+          'key' => '_pb_pdf_path',
+          'value' => '',
+          'compare' => '=',
+        ],
+      ]);
+    }
   }
 
   public static function generate_reference_code(): string {
@@ -116,5 +198,43 @@ class PB_RF_Richieste {
       'sede_indirizzo_completo' => $sede_addr,
       'note' => get_post_meta($request_id, '_pb_note', true),
     ];
+  }
+
+  private static function has_generated_pdf($request_id) {
+    $pdf_path = get_post_meta($request_id, '_pb_pdf_path', true);
+    return !empty($pdf_path) && file_exists($pdf_path) && PB_RF_Storage::path_is_inside_base($pdf_path);
+  }
+
+  private static function count_by_status($status) {
+    $args = [
+      'post_type' => self::CPT,
+      'post_status' => 'publish',
+      'fields' => 'ids',
+      'posts_per_page' => -1,
+    ];
+
+    if ($status === self::STATUS_DONE) {
+      $args['meta_query'] = [[
+        'key' => '_pb_pdf_path',
+        'value' => '',
+        'compare' => '!=',
+      ]];
+    } elseif ($status === self::STATUS_PENDING) {
+      $args['meta_query'] = [
+        'relation' => 'OR',
+        [
+          'key' => '_pb_pdf_path',
+          'compare' => 'NOT EXISTS',
+        ],
+        [
+          'key' => '_pb_pdf_path',
+          'value' => '',
+          'compare' => '=',
+        ],
+      ];
+    }
+
+    $query = new WP_Query($args);
+    return intval($query->found_posts);
   }
 }

@@ -114,13 +114,13 @@ class PB_RF_Form {
     $modulo_id = intval($_POST['pb_modulo_id'] ?? 0);
 
     // Basic required fields (schema-driven would be next iteration)
-    $gen_nome  = sanitize_text_field($_POST['genitore_nome'] ?? '');
-    $gen_email = sanitize_email($_POST['genitore_email'] ?? '');
-    $b_nome    = sanitize_text_field($_POST['bambino_nome'] ?? '');
-    $b_nascita = sanitize_text_field($_POST['bambino_nascita'] ?? '');
+    $gen_nome  = sanitize_text_field(wp_unslash($_POST['genitore_nome'] ?? ''));
+    $gen_email = sanitize_email(wp_unslash($_POST['genitore_email'] ?? ''));
+    $b_nome    = sanitize_text_field(wp_unslash($_POST['bambino_nome'] ?? ''));
+    $b_nascita = sanitize_text_field(wp_unslash($_POST['bambino_nascita'] ?? ''));
     $sede_id   = intval($_POST['sede_id'] ?? 0);
 
-    if (!$gen_nome || !$gen_email || !$b_nome || !$b_nascita || !$sede_id) {
+    if (!$gen_nome || !is_email($gen_email) || !$b_nome || !$b_nascita || !$sede_id) {
       wp_die('Campi obbligatori mancanti.');
     }
 
@@ -139,17 +139,23 @@ class PB_RF_Form {
 
     update_post_meta($post_id, '_pb_gen_nome', $gen_nome);
     update_post_meta($post_id, '_pb_gen_email', $gen_email);
-    update_post_meta($post_id, '_pb_gen_tel', sanitize_text_field($_POST['genitore_tel'] ?? ''));
+    update_post_meta($post_id, '_pb_gen_tel', sanitize_text_field(wp_unslash($_POST['genitore_tel'] ?? '')));
 
     update_post_meta($post_id, '_pb_b_nome', $b_nome);
     update_post_meta($post_id, '_pb_b_nascita', $b_nascita);
-    update_post_meta($post_id, '_pb_b_cf', sanitize_text_field($_POST['bambino_cf'] ?? ''));
+    update_post_meta($post_id, '_pb_b_cf', sanitize_text_field(wp_unslash($_POST['bambino_cf'] ?? '')));
 
     update_post_meta($post_id, '_pb_sede_id', $sede_id);
-    update_post_meta($post_id, '_pb_note', sanitize_textarea_field($_POST['note'] ?? ''));
+    update_post_meta($post_id, '_pb_note', sanitize_textarea_field(wp_unslash($_POST['note'] ?? '')));
+
+    try {
+      PB_RF_Mailer::send_submission_notification($post_id);
+    } catch (Exception $e) {
+      do_action('pb_rf_submission_notification_failed', $post_id, $e->getMessage());
+    }
 
     // Email conferma (semplice)
-    @wp_mail($gen_email, "Richiesta ricevuta: $ref", "Abbiamo ricevuto la tua richiesta.\nNumero pratica: $ref");
+    wp_mail($gen_email, "Richiesta ricevuta: $ref", "Abbiamo ricevuto la tua richiesta.\nNumero pratica: $ref");
 
     $redirect = add_query_arg(['pb_ok' => '1', 'ref' => $ref], wp_get_referer() ?: home_url('/'));
     wp_safe_redirect($redirect);

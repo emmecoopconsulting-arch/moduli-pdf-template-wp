@@ -28,6 +28,10 @@ class PB_RF_Bootstrap {
 
     add_action('add_meta_boxes', ['PB_RF_Richieste', 'metaboxes']);
     add_action('save_post', ['PB_RF_Richieste', 'save_post'], 10, 2);
+    add_filter('manage_edit-' . PB_RF_Richieste::CPT . '_columns', ['PB_RF_Richieste', 'list_table_columns']);
+    add_action('manage_' . PB_RF_Richieste::CPT . '_posts_custom_column', ['PB_RF_Richieste', 'render_list_table_column'], 10, 2);
+    add_filter('views_edit-' . PB_RF_Richieste::CPT, ['PB_RF_Richieste', 'list_table_views']);
+    add_action('pre_get_posts', ['PB_RF_Richieste', 'filter_requests_query']);
 
     add_shortcode('pb_richiesta_frequenza', ['PB_RF_Form', 'shortcode']);
     add_action('admin_post_nopriv_pb_rf_submit', ['PB_RF_Form', 'handle_submit']);

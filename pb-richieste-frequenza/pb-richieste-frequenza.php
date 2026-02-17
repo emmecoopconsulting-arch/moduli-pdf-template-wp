@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PB Richieste Frequenza
  * Description: Richieste frequenza con moduli multipli, template DOCX, conversione PDF (LibreOffice) e invio email.
- * Version: 0.6.0
+ * Version: 0.7.0
  * Author: EMME COOP Consulting
  */
 
