@@ -112,17 +112,52 @@ class PB_RF_Form {
     if (empty($_POST['privacy'])) wp_die('Devi accettare la privacy.');
 
     $modulo_id = intval($_POST['pb_modulo_id'] ?? 0);
+    $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : self::default_schema();
+    $values = [];
+    $missing_required = [];
 
-    // Basic required fields (schema-driven would be next iteration)
-    $gen_nome  = sanitize_text_field(wp_unslash($_POST['genitore_nome'] ?? ''));
-    $gen_email = sanitize_email(wp_unslash($_POST['genitore_email'] ?? ''));
-    $b_nome    = sanitize_text_field(wp_unslash($_POST['bambino_nome'] ?? ''));
-    $b_nascita = sanitize_text_field(wp_unslash($_POST['bambino_nascita'] ?? ''));
-    $sede_id   = intval($_POST['sede_id'] ?? 0);
+    foreach ($schema as $f) {
+      $type = sanitize_key($f['type'] ?? 'text');
+      $name = sanitize_key($f['name'] ?? '');
+      if ($type === 'select_sede') {
+        $name = 'sede_id';
+      }
+      if (!$name) continue;
 
-    if (!$gen_nome || !is_email($gen_email) || !$b_nome || !$b_nascita || !$sede_id) {
-      wp_die('Campi obbligatori mancanti.');
+      $label = isset($f['label']) ? sanitize_text_field($f['label']) : $name;
+      $raw = wp_unslash($_POST[$name] ?? '');
+
+      if ($type === 'textarea') {
+        $value = sanitize_textarea_field($raw);
+      } elseif ($type === 'email') {
+        $value = sanitize_email($raw);
+      } elseif ($type === 'select_sede') {
+        $value = intval($raw);
+      } else {
+        $value = sanitize_text_field($raw);
+      }
+
+      $values[$name] = $value;
+
+      $is_empty = ($type === 'select_sede') ? intval($value) <= 0 : $value === '';
+      if (!empty($f['required']) && $is_empty) {
+        $missing_required[] = $label;
+        continue;
+      }
+      if ($type === 'email' && $value !== '' && !is_email($value)) {
+        $missing_required[] = $label;
+      }
     }
+
+    if (!empty($missing_required)) {
+      wp_die('Campi obbligatori mancanti o non validi: ' . esc_html(implode(', ', array_unique($missing_required))) . '.');
+    }
+
+    $gen_nome  = $values['genitore_nome'] ?? '';
+    $gen_email = $values['genitore_email'] ?? '';
+    $b_nome    = $values['bambino_nome'] ?? '';
+    $b_nascita = $values['bambino_nascita'] ?? '';
+    $sede_id   = intval($values['sede_id'] ?? 0);
 
     $ref = PB_RF_Richieste::generate_reference_code();
 
@@ -139,14 +174,14 @@ class PB_RF_Form {
 
     update_post_meta($post_id, '_pb_gen_nome', $gen_nome);
     update_post_meta($post_id, '_pb_gen_email', $gen_email);
-    update_post_meta($post_id, '_pb_gen_tel', sanitize_text_field(wp_unslash($_POST['genitore_tel'] ?? '')));
+    update_post_meta($post_id, '_pb_gen_tel', $values['genitore_tel'] ?? '');
 
     update_post_meta($post_id, '_pb_b_nome', $b_nome);
     update_post_meta($post_id, '_pb_b_nascita', $b_nascita);
-    update_post_meta($post_id, '_pb_b_cf', sanitize_text_field(wp_unslash($_POST['bambino_cf'] ?? '')));
+    update_post_meta($post_id, '_pb_b_cf', $values['bambino_cf'] ?? '');
 
     update_post_meta($post_id, '_pb_sede_id', $sede_id);
-    update_post_meta($post_id, '_pb_note', sanitize_textarea_field(wp_unslash($_POST['note'] ?? '')));
+    update_post_meta($post_id, '_pb_note', $values['note'] ?? '');
 
     try {
       PB_RF_Mailer::send_submission_notification($post_id);
@@ -155,7 +190,9 @@ class PB_RF_Form {
     }
 
     // Email conferma (semplice)
-    wp_mail($gen_email, "Richiesta ricevuta: $ref", "Abbiamo ricevuto la tua richiesta.\nNumero pratica: $ref");
+    if ($gen_email && is_email($gen_email)) {
+      wp_mail($gen_email, "Richiesta ricevuta: $ref", "Abbiamo ricevuto la tua richiesta.\nNumero pratica: $ref");
+    }
 
     $redirect = add_query_arg(['pb_ok' => '1', 'ref' => $ref], wp_get_referer() ?: home_url('/'));
     wp_safe_redirect($redirect);
