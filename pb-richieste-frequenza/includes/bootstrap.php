@@ -3,6 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 require_once __DIR__ . '/util-storage.php';
 require_once __DIR__ . '/util-docx.php';
+require_once __DIR__ . '/util-html.php';
 require_once __DIR__ . '/util-mailer.php';
 
 require_once __DIR__ . '/cpt-sedi.php';

@@ -45,7 +45,7 @@ class PB_RF_Form {
       <?php
         $current_group = '';
         foreach ($schema as $f) {
-          $group = $f['group'] ?? '';
+          $group = isset($f['group']) ? $f['group'] : '';
           if ($group && $group !== $current_group) {
             if ($current_group !== '') echo '<hr>';
             echo '<h3>' . esc_html($group) . '</h3>';
@@ -69,9 +69,9 @@ class PB_RF_Form {
   }
 
   private static function render_field($f) {
-    $name = sanitize_key($f['name'] ?? '');
-    $label = $f['label'] ?? $name;
-    $type = $f['type'] ?? 'text';
+    $name = sanitize_key(isset($f['name']) ? $f['name'] : '');
+    $label = isset($f['label']) ? $f['label'] : $name;
+    $type = isset($f['type']) ? $f['type'] : 'text';
     $required = !empty($f['required']);
     $reqAttr = $required ? 'required' : '';
     $out = '<p><label>' . esc_html($label) . '<br>';
@@ -89,10 +89,10 @@ class PB_RF_Form {
     } elseif ($type === 'select') {
       $out .= '<select name="' . esc_attr($name) . '" ' . $reqAttr . '>';
       $out .= '<option value="">Seleziona...</option>';
-      $opts = $f['options'] ?? [];
+      $opts = isset($f['options']) ? $f['options'] : [];
       if (is_array($opts)) {
         foreach ($opts as $o) {
-          $out .= '<option value="' . esc_attr($o['value'] ?? '') . '">' . esc_html($o['label'] ?? '') . '</option>';
+          $out .= '<option value="' . esc_attr(isset($o['value']) ? $o['value'] : '') . '">' . esc_html(isset($o['label']) ? $o['label'] : '') . '</option>';
         }
       }
       $out .= '</select>';
@@ -111,21 +111,21 @@ class PB_RF_Form {
     }
     if (empty($_POST['privacy'])) wp_die('Devi accettare la privacy.');
 
-    $modulo_id = intval($_POST['pb_modulo_id'] ?? 0);
+    $modulo_id = intval(isset($_POST['pb_modulo_id']) ? $_POST['pb_modulo_id'] : 0);
     $schema = $modulo_id ? PB_RF_Moduli::schema($modulo_id) : self::default_schema();
     $values = [];
     $missing_required = [];
 
     foreach ($schema as $f) {
-      $type = sanitize_key($f['type'] ?? 'text');
-      $name = sanitize_key($f['name'] ?? '');
+      $type = sanitize_key(isset($f['type']) ? $f['type'] : 'text');
+      $name = sanitize_key(isset($f['name']) ? $f['name'] : '');
       if ($type === 'select_sede') {
         $name = 'sede_id';
       }
       if (!$name) continue;
 
       $label = isset($f['label']) ? sanitize_text_field($f['label']) : $name;
-      $raw = wp_unslash($_POST[$name] ?? '');
+      $raw = wp_unslash(isset($_POST[$name]) ? $_POST[$name] : '');
 
       if ($type === 'textarea') {
         $value = sanitize_textarea_field($raw);
@@ -153,11 +153,11 @@ class PB_RF_Form {
       wp_die('Campi obbligatori mancanti o non validi: ' . esc_html(implode(', ', array_unique($missing_required))) . '.');
     }
 
-    $gen_nome  = $values['genitore_nome'] ?? '';
-    $gen_email = $values['genitore_email'] ?? '';
-    $b_nome    = $values['bambino_nome'] ?? '';
-    $b_nascita = $values['bambino_nascita'] ?? '';
-    $sede_id   = intval($values['sede_id'] ?? 0);
+    $gen_nome  = isset($values['genitore_nome']) ? $values['genitore_nome'] : '';
+    $gen_email = isset($values['genitore_email']) ? $values['genitore_email'] : '';
+    $b_nome    = isset($values['bambino_nome']) ? $values['bambino_nome'] : '';
+    $b_nascita = isset($values['bambino_nascita']) ? $values['bambino_nascita'] : '';
+    $sede_id   = intval(isset($values['sede_id']) ? $values['sede_id'] : 0);
 
     $ref = PB_RF_Richieste::generate_reference_code();
 
@@ -174,14 +174,14 @@ class PB_RF_Form {
 
     update_post_meta($post_id, '_pb_gen_nome', $gen_nome);
     update_post_meta($post_id, '_pb_gen_email', $gen_email);
-    update_post_meta($post_id, '_pb_gen_tel', $values['genitore_tel'] ?? '');
+    update_post_meta($post_id, '_pb_gen_tel', isset($values['genitore_tel']) ? $values['genitore_tel'] : '');
 
     update_post_meta($post_id, '_pb_b_nome', $b_nome);
     update_post_meta($post_id, '_pb_b_nascita', $b_nascita);
-    update_post_meta($post_id, '_pb_b_cf', $values['bambino_cf'] ?? '');
+    update_post_meta($post_id, '_pb_b_cf', isset($values['bambino_cf']) ? $values['bambino_cf'] : '');
 
     update_post_meta($post_id, '_pb_sede_id', $sede_id);
-    update_post_meta($post_id, '_pb_note', $values['note'] ?? '');
+    update_post_meta($post_id, '_pb_note', isset($values['note']) ? $values['note'] : '');
 
     try {
       PB_RF_Mailer::send_submission_notification($post_id);

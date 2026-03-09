@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 class PB_RF_Storage {
   public static function ensure_storage() {
-    $paths = [PB_RF_BASE_PATH, PB_RF_DOCX_PATH, PB_RF_PDF_PATH, PB_RF_TMP_PATH];
+    $paths = [PB_RF_BASE_PATH, PB_RF_DOCX_PATH, PB_RF_HTML_PATH, PB_RF_PDF_PATH, PB_RF_TMP_PATH];
     foreach ($paths as $p) {
       if (!file_exists($p)) {
         wp_mkdir_p($p);

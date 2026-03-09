@@ -40,10 +40,10 @@ class PB_RF_Sedi {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
     if (!isset($_POST['pb_rf_sede_nonce']) || !wp_verify_nonce($_POST['pb_rf_sede_nonce'], 'pb_rf_sede_save')) return;
 
-    update_post_meta($post_id, '_pb_via', sanitize_text_field($_POST['pb_via'] ?? ''));
-    update_post_meta($post_id, '_pb_cap', sanitize_text_field($_POST['pb_cap'] ?? ''));
-    update_post_meta($post_id, '_pb_comune', sanitize_text_field($_POST['pb_comune'] ?? ''));
-    update_post_meta($post_id, '_pb_prov', sanitize_text_field($_POST['pb_prov'] ?? ''));
+    update_post_meta($post_id, '_pb_via', sanitize_text_field(isset($_POST['pb_via']) ? $_POST['pb_via'] : ''));
+    update_post_meta($post_id, '_pb_cap', sanitize_text_field(isset($_POST['pb_cap']) ? $_POST['pb_cap'] : ''));
+    update_post_meta($post_id, '_pb_comune', sanitize_text_field(isset($_POST['pb_comune']) ? $_POST['pb_comune'] : ''));
+    update_post_meta($post_id, '_pb_prov', sanitize_text_field(isset($_POST['pb_prov']) ? $_POST['pb_prov'] : ''));
   }
 
   public static function full_address($sede_id) {

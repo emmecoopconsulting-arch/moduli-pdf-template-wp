@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) exit;
 define('PB_RF_UPLOAD_SUBDIR', 'richieste-frequenza');
 define('PB_RF_BASE_PATH', trailingslashit(WP_CONTENT_DIR) . 'uploads/' . PB_RF_UPLOAD_SUBDIR);
 define('PB_RF_DOCX_PATH', PB_RF_BASE_PATH . '/docx');
+define('PB_RF_HTML_PATH', PB_RF_BASE_PATH . '/html');
 define('PB_RF_PDF_PATH',  PB_RF_BASE_PATH . '/pdf');
 define('PB_RF_TMP_PATH',  PB_RF_BASE_PATH . '/tmp');
 

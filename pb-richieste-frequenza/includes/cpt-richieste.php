@@ -83,7 +83,7 @@ class PB_RF_Richieste {
     global $typenow;
     if ($typenow !== self::CPT) return $views;
 
-    $current = sanitize_key($_GET[self::QUERY_VAR_STATUS] ?? '');
+    $current = sanitize_key(isset($_GET[self::QUERY_VAR_STATUS]) ? $_GET[self::QUERY_VAR_STATUS] : '');
     $pending_count = self::count_by_status(self::STATUS_PENDING);
     $done_count = self::count_by_status(self::STATUS_DONE);
 
@@ -112,7 +112,7 @@ class PB_RF_Richieste {
     $post_type = $query->get('post_type');
     if ($post_type !== self::CPT) return;
 
-    $status = sanitize_key($_GET[self::QUERY_VAR_STATUS] ?? '');
+    $status = sanitize_key(isset($_GET[self::QUERY_VAR_STATUS]) ? $_GET[self::QUERY_VAR_STATUS] : '');
     if ($status === self::STATUS_DONE) {
       $query->set('meta_query', [[
         'key' => '_pb_pdf_path',
@@ -137,7 +137,7 @@ class PB_RF_Richieste {
     }
   }
 
-  public static function generate_reference_code(): string {
+  public static function generate_reference_code() {
     $year = date('Y');
     $charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     for ($i = 0; $i < 30; $i++) {
