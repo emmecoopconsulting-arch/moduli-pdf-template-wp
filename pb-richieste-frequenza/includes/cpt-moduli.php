@@ -15,26 +15,23 @@ class PB_RF_Moduli {
   }
 
   public static function metaboxes() {
-    add_meta_box('pb_rf_mod_tpl', 'Template DOCX e impostazioni', [self::class, 'render_metabox'], self::CPT, 'normal', 'high');
+    add_meta_box('pb_rf_mod_tpl', 'Template HTML e impostazioni', [self::class, 'render_metabox'], self::CPT, 'normal', 'high');
   }
 
   public static function render_metabox($post) {
     wp_nonce_field('pb_rf_mod_save', 'pb_rf_mod_nonce');
-    $tpl = self::template_filename($post->ID);
     $html_tpl = self::html_template_filename($post->ID);
     $header_tpl = self::html_header_filename($post->ID);
     $footer_tpl = self::html_footer_filename($post->ID);
+    $tpl = self::template_filename($post->ID);
     $schema = get_post_meta($post->ID, '_pb_schema_json', true);
     $mail_sub = get_post_meta($post->ID, '_pb_mail_subject', true);
     $mail_body = get_post_meta($post->ID, '_pb_mail_body', true);
     $auto_send = get_post_meta($post->ID, '_pb_auto_send', true);
-    $available_templates = self::available_templates();
     $available_html_templates = PB_RF_Html::available_templates();
-    $template_path = PB_RF_DOCX_PATH . '/' . $tpl;
     $html_template_path = $html_tpl ? PB_RF_HTML_PATH . '/' . $html_tpl : '';
     $header_template_path = $header_tpl ? PB_RF_HTML_PATH . '/' . $header_tpl : '';
     $footer_template_path = $footer_tpl ? PB_RF_HTML_PATH . '/' . $footer_tpl : '';
-    $template_exists = is_readable($template_path);
     $html_template_exists = $html_template_path && is_readable($html_template_path);
     $header_template_exists = !$header_template_path || is_readable($header_template_path);
     $footer_template_exists = !$footer_template_path || is_readable($footer_template_path);
@@ -44,21 +41,7 @@ class PB_RF_Moduli {
     }
 
     ?>
-    <p><b>Template DOCX:</b> carica un file DOCX in <code><?php echo esc_html(PB_RF_DOCX_PATH); ?></code> e inserisci qui il nome file (es. <code>template.docx</code>) oppure un nome diverso per questo modulo.</p>
-    <p><input style="width:100%" type="text" name="pb_template_docx" value="<?php echo esc_attr($tpl); ?>"></p>
-    <?php if ($template_exists) : ?>
-      <p style="color:#137333"><b>Template attivo:</b> <?php echo esc_html($tpl); ?></p>
-    <?php else : ?>
-      <p style="color:#b32d2e"><b>Template non trovato:</b> <?php echo esc_html($tpl); ?></p>
-    <?php endif; ?>
-    <?php if (!empty($available_templates)) : ?>
-      <p><b>Template disponibili:</b> <?php echo esc_html(implode(', ', $available_templates)); ?></p>
-    <?php else : ?>
-      <p style="color:#b32d2e">Nessun file <code>.docx</code> trovato nella cartella template.</p>
-    <?php endif; ?>
-
-    <hr>
-    <p><b>Template HTML</b> (prioritario rispetto al DOCX): carica i file in <code><?php echo esc_html(PB_RF_HTML_PATH); ?></code>.</p>
+    <p><b>Template HTML:</b> carica i file in <code><?php echo esc_html(PB_RF_HTML_PATH); ?></code>. Questo modulo genera il PDF partendo da un template HTML.</p>
     <p>Template principale<br><input style="width:100%" type="text" name="pb_template_html" value="<?php echo esc_attr($html_tpl); ?>" placeholder="template.html"></p>
     <?php if ($html_tpl !== '') : ?>
       <?php if ($html_template_exists) : ?>
@@ -82,6 +65,7 @@ class PB_RF_Moduli {
     <?php else : ?>
       <p style="color:#777">Nessun file <code>.html</code> trovato nella cartella HTML.</p>
     <?php endif; ?>
+    <p style="color:#777">Fallback tecnico DOCX attuale: <?php echo esc_html($tpl); ?></p>
 
     <hr>
     <p><b>Schema campi (JSON)</b> — editabile. Tipi: text, email, date, textarea, select. Per select: "options": [{"value":"1","label":"..."}].</p>
